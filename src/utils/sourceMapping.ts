@@ -8,12 +8,12 @@ interface SourceMapping {
 
 const convertFonteToMapping = (fonte: Fonte): SourceMapping => ({
   id: fonte.id,
-  phoneNumber: fonte.fontes,
+  phoneNumber: fonte.fonte,
   customName: fonte.nome
 });
 
 const convertMappingToFonte = (mapping: SourceMapping, companyId?: string): Omit<Fonte, 'id' | 'created_at' | 'updated_at'> => ({
-  fontes: mapping.phoneNumber,
+  fonte: mapping.phoneNumber,
   nome: mapping.customName,
   company_id: companyId || null
 });
@@ -35,7 +35,7 @@ export const getSourceMappings = async (): Promise<SourceMapping[]> => {
 
     const companyId = companyUserData?.company_id;
 
-    let query = supabase.from('Fontes').select('*');
+    let query = supabase.from('fontes').select('*');
 
     if (companyId) {
       query = query.eq('company_id', companyId);
@@ -84,7 +84,7 @@ export const saveSourceMappings = async (mappings: SourceMapping[], companyId?: 
     const toDelete = existingIds.filter(id => !newMappingIds.includes(id));
     if (toDelete.length > 0) {
       const { error: deleteError } = await supabase
-        .from('Fontes')
+        .from('fontes')
         .delete()
         .in('id', toDelete);
 
@@ -96,7 +96,7 @@ export const saveSourceMappings = async (mappings: SourceMapping[], companyId?: 
 
       if (existingIds.includes(mapping.id)) {
         const { error: updateError } = await supabase
-          .from('Fontes')
+          .from('fontes')
           .update(fonteData)
           .eq('id', mapping.id);
 
@@ -111,7 +111,7 @@ export const saveSourceMappings = async (mappings: SourceMapping[], companyId?: 
         }
       } else {
         const { error: insertError } = await supabase
-          .from('Fontes')
+          .from('fontes')
           .insert([fonteData]);
 
         if (insertError) {

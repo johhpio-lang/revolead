@@ -22,7 +22,7 @@ export type Lead = {
 
 export type Fonte = {
   id: string;
-  fontes: string;
+  fonte: string;
   nome: string;
   created_at: string;
   updated_at: string;

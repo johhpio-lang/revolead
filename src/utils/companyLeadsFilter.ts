@@ -3,8 +3,8 @@ import { supabase } from '../lib/supabase';
 export const getCompanySourceNumbers = async (companyId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
-      .from('Fontes')
-      .select('fontes')
+      .from('fontes')
+      .select('fonte')
       .eq('company_id', companyId);
 
     if (error) {
@@ -12,7 +12,7 @@ export const getCompanySourceNumbers = async (companyId: string): Promise<string
       return [];
     }
 
-    return data?.map(item => item.fontes) || [];
+    return data?.map(item => item.fonte) || [];
   } catch (error) {
     console.error('Error in getCompanySourceNumbers:', error);
     return [];
