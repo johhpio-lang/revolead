@@ -132,6 +132,20 @@ const AuthForm: React.FC = () => {
             </button>
           </div>
         </div>
+
+        <div className="text-center mt-6">
+          <p className="text-sm text-gray-500">
+            Powered by{' '}
+            <a
+              href="https://www.gorevolutionai.com.br"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+            >
+              GoRevolution.AI
+            </a>
+          </p>
+        </div>
       </div>
     </div>
   );
