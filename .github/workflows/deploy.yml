@@ -1,0 +1,27 @@
+name: 🚀 Deploy automático na Hostinger
+
+on:
+  push:
+    branches:
+      - main  # ou a branch principal do seu projeto
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Clonar repositório
+        uses: actions/checkout@v4
+
+      - name: 🧱 Instalar dependências e gerar build
+        run: |
+          npm install
+          npm run build
+
+      - name: 📤 Enviar para Hostinger via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist  # ajuste conforme sua pasta de build (pode ser ./out, ./build etc.)
+          server-dir: ${{ secrets.FTP_PATH }}
