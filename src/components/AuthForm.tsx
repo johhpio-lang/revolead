@@ -50,7 +50,7 @@ const AuthForm: React.FC = () => {
           <p className="mt-2 text-gray-600">
             {isSignUp
               ? 'Cadastre-se para começar a gerenciar seus leads'
-              : 'Entre no seu painel de leads'
+              : 'Entre e Revolucione a forma como gera Leads Qualificados'
             }
           </p>
         </div>
