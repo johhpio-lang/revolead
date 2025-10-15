@@ -33,29 +33,21 @@ const AuthForm: React.FC = () => {
   };
 
   return (
-    <div
-      className="min-h-screen flex items-center justify-center p-4 relative"
-      style={{
-        backgroundImage: 'url(https://ghtlgpibojnkzgkjooua.supabase.co/storage/v1/object/sign/imagens/ChatGPT%20Image%2013%20de%20out.%20de%202025,%2018_51_38.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNWRkMWE0OC05ZTMxLTQ5YmItODZjYy1lYTEyM2IxMDAxMjAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZW5zL0NoYXRHUFQgSW1hZ2UgMTMgZGUgb3V0LiBkZSAyMDI1LCAxOF81MV8zOC5wbmciLCJpYXQiOjE3NjAzOTIzNTIsImV4cCI6MjA3NTc1MjM1Mn0.ZnBKR54KsT_w0jkZJxp3TQBoxSnsHX5V0zrP6W0FXSc)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-    >
-      <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-      <div className="max-w-md w-full space-y-8 relative z-10">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+
+      <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <img
               src="https://ghtlgpibojnkzgkjooua.supabase.co/storage/v1/object/sign/imagens/REVOLEAD%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNWRkMWE0OC05ZTMxLTQ5YmItODZjYy1lYTEyM2IxMDAxMjAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZW5zL1JFVk9MRUFEICgxKS5wbmciLCJpYXQiOjE3NjA1NjcyNzUsImV4cCI6MjA3NTkyNzI3NX0.iqsTR23ioVkxvvpH6BEzDTPuKND74K3NGlyfpSk3eg8"
               alt="Revolead Logo"
-              className="h-16 w-auto drop-shadow-2xl"
+              className="h-16 w-auto"
             />
           </div>
-          <h2 className="text-3xl font-bold text-white drop-shadow-lg">
+          <h2 className="text-3xl font-bold text-gray-900">
             {isSignUp ? 'Criar Conta' : 'Bem-vindo de Volta'}
           </h2>
-          <p className="mt-2 text-white drop-shadow-md">
+          <p className="mt-2 text-gray-600">
             {isSignUp
               ? 'Cadastre-se para começar a gerenciar seus leads'
               : 'Entre no seu painel de leads'
@@ -63,7 +55,7 @@ const AuthForm: React.FC = () => {
           </p>
         </div>
 
-        <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-xl shadow-2xl p-8">
+        <div className="bg-white rounded-xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2 text-red-700">
