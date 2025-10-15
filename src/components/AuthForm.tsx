@@ -45,8 +45,12 @@ const AuthForm: React.FC = () => {
       <div className="absolute inset-0 bg-black bg-opacity-30"></div>
       <div className="max-w-md w-full space-y-8 relative z-10">
         <div className="text-center">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <LogIn className="w-8 h-8 text-white" />
+          <div className="flex justify-center mb-6">
+            <img
+              src="https://ghtlgpibojnkzgkjooua.supabase.co/storage/v1/object/sign/imagens/REVOLEAD%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNWRkMWE0OC05ZTMxLTQ5YmItODZjYy1lYTEyM2IxMDAxMjAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZW5zL1JFVk9MRUFEICgxKS5wbmciLCJpYXQiOjE3NjA1NjcyNzUsImV4cCI6MjA3NTkyNzI3NX0.iqsTR23ioVkxvvpH6BEzDTPuKND74K3NGlyfpSk3eg8"
+              alt="Revolead Logo"
+              className="h-16 w-auto drop-shadow-2xl"
+            />
           </div>
           <h2 className="text-3xl font-bold text-white drop-shadow-lg">
             {isSignUp ? 'Criar Conta' : 'Bem-vindo de Volta'}
