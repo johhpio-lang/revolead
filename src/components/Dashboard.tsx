@@ -102,10 +102,11 @@ const Dashboard: React.FC = () => {
       }`}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Home className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-lg font-semibold text-gray-900">Revolead</h1>
+            <img
+              src="https://ghtlgpibojnkzgkjooua.supabase.co/storage/v1/object/sign/imagens/REVOLEAD%20(1).png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8yNWRkMWE0OC05ZTMxLTQ5YmItODZjYy1lYTEyM2IxMDAxMjAiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJpbWFnZW5zL1JFVk9MRUFEICgxKS5wbmciLCJpYXQiOjE3NjA1NjcyNzUsImV4cCI6MjA3NTkyNzI3NX0.iqsTR23ioVkxvvpH6BEzDTPuKND74K3NGlyfpSk3eg8"
+              alt="Revolead Logo"
+              className="h-8 w-auto"
+            />
           </div>
           <button
             onClick={() => {
