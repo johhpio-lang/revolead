@@ -129,7 +129,10 @@ const AuthForm: React.FC = () => {
                 setIsSignUp(!isSignUp);
                 setError(null);
               }}
-              className="mt-1 text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              className="mt-1 font-medium transition-colors"
+              style={{ color: '#ed6e26' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#d45d1f'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#ed6e26'}
             >
               {isSignUp ? 'Entrar ao invés' : 'Criar uma agora'}
             </button>
@@ -143,7 +146,10 @@ const AuthForm: React.FC = () => {
               href="https://www.gorevolutionai.com.br"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-600 hover:text-blue-700 font-medium transition-colors"
+              className="font-medium transition-colors"
+              style={{ color: '#ed6e26' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = '#d45d1f'}
+              onMouseLeave={(e) => e.currentTarget.style.color = '#ed6e26'}
             >
               GoRevolution.AI
             </a>
