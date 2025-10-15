@@ -23,5 +23,5 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist  # ajuste conforme sua pasta de build (pode ser ./out, ./build etc.)
+          local-dir: ./dist/  # ajuste conforme sua pasta de build (pode ser ./out, ./build etc.)
           server-dir: ${{ secrets.FTP_PATH }}
