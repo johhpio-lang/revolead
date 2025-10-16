@@ -240,6 +240,8 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ onConfigurationSave, toggleSide
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const getTimeFilterDate = (filter: TimeFilter): string => {
     const now = new Date();
