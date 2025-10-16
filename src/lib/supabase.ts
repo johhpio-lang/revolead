@@ -34,6 +34,7 @@ export type FollowUpLead = {
   nome: string;
   fonte: number;
   telefone: string;
+  company_id: string | null;
   etapa_1: string | null;
   etapa_2: string | null;
   etapa_3: string | null;

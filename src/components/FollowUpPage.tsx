@@ -99,11 +99,11 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
 
       setLeads(leadsData || []);
 
-      // Fetch leads from vw_leads_followup view
+      // Fetch leads from vw_leads_followup view filtered by company_id
       const { data: followUpData, error: followUpError } = await supabase
         .from('vw_leads_followup')
         .select('*')
-        .in('fonte', companySourceNumbers)
+        .eq('company_id', companyId)
         .order('data', { ascending: false });
 
       if (followUpError) {
