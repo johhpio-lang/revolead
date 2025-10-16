@@ -11,7 +11,6 @@ import {
   ArrowLeft,
   Phone,
   User,
-  Bot,
   Globe,
   MessageCircle,
   Search,
@@ -68,7 +67,9 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
         } else if (customStartDate) {
           return { start: new Date(customStartDate).toISOString() };
         }
-        return { start: monthAgo.toISOString() };
+        const fallbackMonthAgo = new Date(today);
+        fallbackMonthAgo.setMonth(today.getMonth() - 1);
+        return { start: fallbackMonthAgo.toISOString() };
       default:
         const defaultMonthAgo = new Date(today);
         defaultMonthAgo.setMonth(today.getMonth() - 1);
