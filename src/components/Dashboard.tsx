@@ -25,7 +25,8 @@ import {
   Home,
   MessageCircle,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft
 } from 'lucide-react';
 
 type CurrentView = 'leads' | 'qualified' | 'dashboard' | 'followup';
@@ -37,6 +38,8 @@ const Dashboard: React.FC = () => {
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [showConfigModal, setShowConfigModal] = useState(false);
   const [settingsMenuOpen, setSettingsMenuOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const handleConfigurationSave = () => {
     // Refresh data when configuration is saved
@@ -378,6 +381,19 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ onConfigurationSave, toggleSide
     fetchAvailableSources();
   }, [user]);
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [timeFilter, sourceFilter]);
+
+  const totalPages = Math.ceil(leads.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentLeads = leads.slice(startIndex, endIndex);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
   const filterButtons = [
     { key: 'day' as TimeFilter, label: 'Hoje', icon: Calendar },
     { key: 'week' as TimeFilter, label: 'Semana', icon: Calendar },
@@ -619,14 +635,14 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ onConfigurationSave, toggleSide
                       Carregando leads...
                     </td>
                   </tr>
-                ) : leads.length === 0 ? (
+                ) : currentLeads.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                       Nenhum lead encontrado para o período selecionado
                     </td>
                   </tr>
                 ) : (
-                  leads.slice(0, 10).map((lead) => (
+                  currentLeads.map((lead) => (
                     <tr key={lead.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -663,6 +679,70 @@ const LeadsPanel: React.FC<LeadsPanelProps> = ({ onConfigurationSave, toggleSide
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {leads.length > 0 && totalPages > 1 && (
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <span className="text-sm text-gray-600">
+                  Mostrando {startIndex + 1} a {Math.min(endIndex, leads.length)} de {leads.length} lead{leads.length !== 1 ? 's' : ''}
+                </span>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Página anterior"
+                  >
+                    <ChevronLeft className="w-5 h-5 text-gray-600" />
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                      let pageNum;
+                      if (totalPages <= 7) {
+                        pageNum = i + 1;
+                      } else if (currentPage <= 4) {
+                        pageNum = i + 1;
+                      } else if (currentPage >= totalPages - 3) {
+                        pageNum = totalPages - 6 + i;
+                      } else {
+                        pageNum = currentPage - 3 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => goToPage(pageNum)}
+                          className={`px-3 py-1 rounded-lg font-medium transition-colors ${
+                            currentPage === pageNum
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    title="Próxima página"
+                  >
+                    <ChevronRight className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+
+                <span className="text-sm text-gray-600">
+                  Última atualização: {new Date().toLocaleTimeString('pt-BR')}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </main>
 
