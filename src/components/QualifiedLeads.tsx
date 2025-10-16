@@ -6,22 +6,20 @@ import { getCompanySourceNumbers } from '../utils/companyLeadsFilter';
 import ConfigurationModal from './ConfigurationModal';
 import {
   UserCheck,
-  Download,
   Calendar,
   Filter,
   ArrowLeft,
   Phone,
   User,
-  Building2,
   Bot,
   Globe,
-  MessageCircle
+  MessageCircle,
+  Search,
+  Menu
 } from 'lucide-react';
 
-type TimeFilter = 'day' | 'week' | 'month' | 'year';
-type BotStatusFilter = 'all' | 'active' | 'inactive';
+type TimeFilter = 'day' | 'week' | 'month' | 'year' | 'custom';
 type SourceFilter = 'all' | string;
-import { Menu } from 'lucide-react';
 
 interface QualifiedLeadsProps {
   onBack: () => void;
@@ -31,35 +29,50 @@ interface QualifiedLeadsProps {
 const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }) => {
   const { user, fullName, companyName, companyId } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('month');
-  const [botStatusFilter, setBotStatusFilter] = useState<BotStatusFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [availableSources, setAvailableSources] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConfigModal, setShowConfigModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
 
-  const getTimeFilterDate = (filter: TimeFilter): string => {
+  const getTimeFilterDate = (filter: TimeFilter): { start: string; end?: string } => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     switch (filter) {
       case 'day':
-        return today.toISOString();
+        return { start: today.toISOString() };
       case 'week':
         const weekAgo = new Date(today);
         weekAgo.setDate(today.getDate() - 7);
-        return weekAgo.toISOString();
+        return { start: weekAgo.toISOString() };
       case 'month':
         const monthAgo = new Date(today);
         monthAgo.setMonth(today.getMonth() - 1);
-        return monthAgo.toISOString();
+        return { start: monthAgo.toISOString() };
       case 'year':
         const yearAgo = new Date(today);
         yearAgo.setFullYear(today.getFullYear() - 1);
-        return yearAgo.toISOString();
+        return { start: yearAgo.toISOString() };
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          const startDate = new Date(customStartDate);
+          const endDate = new Date(customEndDate);
+          endDate.setHours(23, 59, 59, 999);
+          return { start: startDate.toISOString(), end: endDate.toISOString() };
+        } else if (customStartDate) {
+          return { start: new Date(customStartDate).toISOString() };
+        }
+        return { start: monthAgo.toISOString() };
       default:
-        return monthAgo.toISOString();
+        const defaultMonthAgo = new Date(today);
+        defaultMonthAgo.setMonth(today.getMonth() - 1);
+        return { start: defaultMonthAgo.toISOString() };
     }
   };
 
@@ -103,8 +116,13 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
         .select('*')
         .eq('qualificado', true)
         .in('fonte', companySourceNumbers)
-        .gte('created_at', filterDate)
-        .order('created_at', { ascending: false });
+        .gte('created_at', filterDate.start);
+
+      if (filterDate.end) {
+        query = query.lte('created_at', filterDate.end);
+      }
+
+      query = query.order('created_at', { ascending: false });
 
       // Apply source filter
       if (sourceFilter !== 'all') {
@@ -119,7 +137,9 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
 
       if (error) throw error;
 
-      setLeads(data || []);
+      const leadsData = data || [];
+      setLeads(leadsData);
+      setFilteredLeads(leadsData);
     } catch (error) {
       console.error('Error fetching qualified leads:', error);
       setError(`Failed to load qualified leads: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -148,7 +168,26 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
 
   useEffect(() => {
     fetchQualifiedLeads();
-  }, [user, timeFilter, botStatusFilter, sourceFilter]);
+  }, [user, timeFilter, sourceFilter, customStartDate, customEndDate]);
+
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setFilteredLeads(leads);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase();
+    const filtered = leads.filter(lead => {
+      return (
+        lead.nome?.toLowerCase().includes(searchLower) ||
+        lead.telefone?.toString().includes(searchLower) ||
+        lead.fonte?.toString().includes(searchLower) ||
+        getSourceDisplayNameSync(lead.fonte)?.toLowerCase().includes(searchLower) ||
+        new Date(lead.created_at).toLocaleDateString('pt-BR').includes(searchLower)
+      );
+    });
+    setFilteredLeads(filtered);
+  }, [searchTerm, leads]);
 
   useEffect(() => {
     fetchAvailableSources();
@@ -187,12 +226,7 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
     { key: 'week' as TimeFilter, label: 'Semana', icon: Calendar },
     { key: 'month' as TimeFilter, label: 'Mês', icon: Calendar },
     { key: 'year' as TimeFilter, label: 'Ano', icon: Calendar },
-  ];
-
-  const botStatusButtons = [
-    { key: 'all' as BotStatusFilter, label: 'Todos os Bots', icon: Bot },
-    { key: 'active' as BotStatusFilter, label: 'Ativo', icon: Bot },
-    { key: 'inactive' as BotStatusFilter, label: 'Inativo', icon: Bot },
+    { key: 'custom' as TimeFilter, label: 'Personalizado', icon: Calendar },
   ];
 
   const getTimeFilterLabel = () => {
@@ -201,14 +235,14 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
       case 'week': return 'esta semana';
       case 'month': return 'este mês';
       case 'year': return 'este ano';
-    }
-  };
-
-  const getBotStatusLabel = () => {
-    switch (botStatusFilter) {
-      case 'all': return 'todos os status de bot';
-      case 'active': return 'apenas bots ativos';
-      case 'inactive': return 'apenas bots inativos';
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          return `${new Date(customStartDate).toLocaleDateString('pt-BR')} - ${new Date(customEndDate).toLocaleDateString('pt-BR')}`;
+        } else if (customStartDate) {
+          return `desde ${new Date(customStartDate).toLocaleDateString('pt-BR')}`;
+        }
+        return 'período personalizado';
+      default: return 'este mês';
     }
   };
 
@@ -218,8 +252,7 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
   };
 
   const getFilteredCount = () => {
-    if (botStatusFilter === 'all') return leads.length;
-    return leads.length;
+    return filteredLeads.length;
   };
 
   if (error) {
@@ -271,6 +304,20 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
               {getFilteredCount()} leads qualificados {getTimeFilterLabel()} ({getSourceFilterLabel()})
             </div>
           )}
+        </div>
+
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, telefone, fonte ou data..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
         </div>
 
         {/* Controls */}
@@ -335,6 +382,37 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
                   </button>
                 ))}
               </div>
+
+              {/* Custom Date Range Inputs */}
+              {timeFilter === 'custom' && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data Inicial
+                      </label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Data Final
+                      </label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        min={customStartDate}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -390,20 +468,20 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
                       </div>
                     </td>
                   </tr>
-                ) : leads.length === 0 ? (
+                ) : filteredLeads.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                       <div className="flex flex-col items-center space-y-3">
                         <UserCheck className="w-12 h-12 text-gray-300" />
                         <div>
                           <p className="text-lg font-medium">Nenhum lead encontrado</p>
-                          <p className="text-sm">Nenhum lead qualificado corresponde aos filtros selecionados</p>
+                          <p className="text-sm">{searchTerm ? 'Nenhum lead corresponde à sua busca' : 'Nenhum lead qualificado corresponde aos filtros selecionados'}</p>
                         </div>
                       </div>
                     </td>
                   </tr>
                 ) : (
-                  leads.map((lead) => (
+                  filteredLeads.map((lead) => (
                     <tr key={lead.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -469,11 +547,11 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
           </div>
 
           {/* Table Footer */}
-          {leads.length > 0 && (
+          {filteredLeads.length > 0 && (
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <span>
-                  Mostrando {getFilteredCount()} lead{getFilteredCount() !== 1 ? 's' : ''} qualificado{getFilteredCount() !== 1 ? 's' : ''} {getTimeFilterLabel()} ({getSourceFilterLabel()})
+                  Mostrando {getFilteredCount()} de {leads.length} lead{leads.length !== 1 ? 's' : ''} qualificado{leads.length !== 1 ? 's' : ''} {getTimeFilterLabel()} ({getSourceFilterLabel()})
                 </span>
                 <span>
                   Última atualização: {new Date().toLocaleTimeString('pt-BR')}
