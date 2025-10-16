@@ -27,3 +27,20 @@ export type Fonte = {
   created_at: string;
   updated_at: string;
 };
+
+export type FollowUpLead = {
+  id: number;
+  data: string;
+  nome: string;
+  fonte: number;
+  telefone: string;
+  etapa_1: string | null;
+  etapa_2: string | null;
+  etapa_3: string | null;
+  etapa_4: string | null;
+  etapa_5: string | null;
+  etapa_6: string | null;
+  etapa_7: string | null;
+  observacao: string;
+  data_qualificacao: string | null;
+};

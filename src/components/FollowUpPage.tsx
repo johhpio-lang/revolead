@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { supabase, Lead } from '../lib/supabase';
+import { supabase, Lead, FollowUpLead } from '../lib/supabase';
 import { getSourceMappings, setCachedMappings, getSourceDisplayNameSync } from '../utils/sourceMapping';
 import { getCompanySourceNumbers } from '../utils/companyLeadsFilter';
 import ConfigurationModal from './ConfigurationModal';
@@ -43,6 +43,7 @@ interface FollowUpPageProps {
 const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
   const { user, fullName, companyName, companyId } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [followUpLeads, setFollowUpLeads] = useState<FollowUpLead[]>([]);
   const [followUpTasks, setFollowUpTasks] = useState<FollowUpTask[]>([]);
   const [priorityFilter, setPriorityFilter] = useState<PriorityFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('pending');
@@ -97,6 +98,19 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
       if (leadsError) throw leadsError;
 
       setLeads(leadsData || []);
+
+      // Fetch leads from vw_leads_followup view
+      const { data: followUpData, error: followUpError } = await supabase
+        .from('vw_leads_followup')
+        .select('*')
+        .in('fonte', companySourceNumbers)
+        .order('data', { ascending: false });
+
+      if (followUpError) {
+        console.error('Error fetching follow-up view:', followUpError);
+      } else {
+        setFollowUpLeads(followUpData || []);
+      }
 
       // Load follow-up tasks from localStorage (in a real app, this would be from database)
       const savedTasks = localStorage.getItem('followUpTasks');
@@ -309,6 +323,98 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
             </div>
           </div>
         </div>
+
+        {/* Follow-up Leads Overview */}
+        {followUpLeads.length > 0 && (
+          <div className="bg-white rounded-xl shadow-sm border mb-8">
+            <div className="p-6 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Histórico de Follow-up ({followUpLeads.length})
+              </h3>
+              <p className="text-gray-600 text-sm mt-1">
+                Acompanhe o progresso dos seus leads nas etapas de qualificação
+              </p>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fonte</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Etapas</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {followUpLeads.map((lead) => {
+                    const etapas = [lead.etapa_1, lead.etapa_2, lead.etapa_3, lead.etapa_4, lead.etapa_5, lead.etapa_6, lead.etapa_7];
+                    const etapasCompletas = etapas.filter(e => e !== null).length;
+
+                    return (
+                      <tr key={lead.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <User className="w-4 h-4 text-gray-400 mr-2" />
+                            <span className="text-sm font-medium text-gray-900">{lead.nome}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="w-4 h-4 text-gray-400 mr-2" />
+                            {lead.telefone}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                            {getSourceDisplayNameSync(lead.fonte.toString()) || lead.fonte}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-1">
+                            {etapas.map((etapa, index) => (
+                              <div
+                                key={index}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                                  etapa
+                                    ? 'bg-green-100 text-green-800 border-2 border-green-500'
+                                    : 'bg-gray-100 text-gray-400 border-2 border-gray-300'
+                                }`}
+                                title={etapa ? `Etapa ${index + 1}: ${new Date(etapa).toLocaleDateString()}` : `Etapa ${index + 1}: Pendente`}
+                              >
+                                {index + 1}
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-start">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              lead.data_qualificacao
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {lead.data_qualificacao ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
+                              {lead.observacao}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Calendar className="w-4 h-4 text-gray-400 mr-2" />
+                            {new Date(lead.data).toLocaleDateString()}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* Tasks List */}
         <div className="bg-white rounded-xl shadow-sm border">
