@@ -38,6 +38,8 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
   const [searchTerm, setSearchTerm] = useState('');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   const getTimeFilterDate = (filter: TimeFilter): { start: string; end?: string } => {
     const now = new Date();
@@ -172,6 +174,10 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
   }, [user, timeFilter, sourceFilter, customStartDate, customEndDate]);
 
   useEffect(() => {
+    setCurrentPage(1);
+  }, [timeFilter, sourceFilter, customStartDate, customEndDate, searchTerm]);
+
+  useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredLeads(leads);
       return;
@@ -254,6 +260,103 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
 
   const getFilteredCount = () => {
     return filteredLeads.length;
+  };
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentLeads = filteredLeads.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key="1"
+          onClick={() => goToPage(1)}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(
+          <span key="dots1" className="px-2 py-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          className={`px-3 py-2 border rounded-lg ${
+            currentPage === i
+              ? 'bg-blue-600 text-white border-blue-600'
+              : 'border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(
+          <span key="dots2" className="px-2 py-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => goToPage(totalPages)}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center space-x-2 mt-6">
+        <button
+          onClick={() => goToPage(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Anterior
+        </button>
+        {pages}
+        <button
+          onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Próximo
+        </button>
+      </div>
+    );
   };
 
   if (error) {
@@ -429,7 +532,6 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
           </div>
         </div>
 
-            <h1 className="text-xl font-semibold text-gray-900">Leads Qualificados</h1>
         <div className="bg-white rounded-xl shadow-sm border">
           <div className="p-6 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">Leads Qualificados</h3>
@@ -469,7 +571,7 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
                       </div>
                     </td>
                   </tr>
-                ) : filteredLeads.length === 0 ? (
+                ) : currentLeads.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                       <div className="flex flex-col items-center space-y-3">
@@ -482,7 +584,7 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
                     </td>
                   </tr>
                 ) : (
-                  filteredLeads.map((lead) => (
+                  currentLeads.map((lead) => (
                     <tr key={lead.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -552,7 +654,8 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
             <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
               <div className="flex items-center justify-between text-sm text-gray-600">
                 <span>
-                  Mostrando {getFilteredCount()} de {leads.length} lead{leads.length !== 1 ? 's' : ''} qualificado{leads.length !== 1 ? 's' : ''} {getTimeFilterLabel()} ({getSourceFilterLabel()})
+                  Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredLeads.length)} de {getFilteredCount()} lead{getFilteredCount() !== 1 ? 's' : ''} {searchTerm ? 'encontrado' : 'qualificado'}{getFilteredCount() !== 1 ? 's' : ''}
+                  {leads.length !== filteredLeads.length && ` (${leads.length} no total)`}
                 </span>
                 <span>
                   Última atualização: {new Date().toLocaleTimeString('pt-BR')}
@@ -561,6 +664,9 @@ const QualifiedLeads: React.FC<QualifiedLeadsProps> = ({ onBack, toggleSidebar }
             </div>
           )}
         </div>
+
+        {/* Pagination */}
+        {renderPagination()}
       </main>
 
       <ConfigurationModal

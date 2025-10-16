@@ -57,12 +57,18 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
     dueDate: '',
   });
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(50);
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
   }, [user]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, priorityFilter, statusFilter]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -200,6 +206,115 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
     return new Date(dueDate) < new Date() && !followUpTasks.find(t => t.dueDate === dueDate)?.completed;
   };
 
+  const filteredFollowUpLeads = followUpLeads.filter(lead => {
+    if (searchTerm) {
+      const search = searchTerm.toLowerCase();
+      return (
+        lead.nome?.toLowerCase().includes(search) ||
+        lead.telefone?.toString().includes(search) ||
+        lead.observacao?.toLowerCase().includes(search)
+      );
+    }
+    return true;
+  });
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentFollowUpLeads = filteredFollowUpLeads.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredFollowUpLeads.length / itemsPerPage);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    const pages = [];
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+    if (endPage - startPage < maxVisiblePages - 1) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+
+    if (startPage > 1) {
+      pages.push(
+        <button
+          key="1"
+          onClick={() => goToPage(1)}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          1
+        </button>
+      );
+      if (startPage > 2) {
+        pages.push(
+          <span key="dots1" className="px-2 py-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <button
+          key={i}
+          onClick={() => goToPage(i)}
+          className={`px-3 py-2 border rounded-lg ${
+            currentPage === i
+              ? 'bg-orange-600 text-white border-orange-600'
+              : 'border-gray-300 hover:bg-gray-50'
+          }`}
+        >
+          {i}
+        </button>
+      );
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        pages.push(
+          <span key="dots2" className="px-2 py-2 text-gray-500">
+            ...
+          </span>
+        );
+      }
+      pages.push(
+        <button
+          key={totalPages}
+          onClick={() => goToPage(totalPages)}
+          className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+        >
+          {totalPages}
+        </button>
+      );
+    }
+
+    return (
+      <div className="flex items-center justify-center space-x-2 mt-6">
+        <button
+          onClick={() => goToPage(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Anterior
+        </button>
+        {pages}
+        <button
+          onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Próximo
+        </button>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -329,10 +444,10 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
           <div className="bg-white rounded-xl shadow-sm border mb-8">
             <div className="p-6 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
-                Histórico de Follow-up ({followUpLeads.length})
+                Histórico de Follow-up ({filteredFollowUpLeads.length}{filteredFollowUpLeads.length !== followUpLeads.length && ` de ${followUpLeads.length}`})
               </h3>
               <p className="text-gray-600 text-sm mt-1">
-                Acompanhe o progresso dos seus leads nas etapas de qualificação
+                {searchTerm ? `Mostrando ${indexOfFirstItem + 1}-${Math.min(indexOfLastItem, filteredFollowUpLeads.length)} resultados` : 'Acompanhe o progresso dos seus leads nas etapas de qualificação'}
               </p>
             </div>
 
@@ -349,7 +464,18 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {followUpLeads.map((lead) => {
+                  {currentFollowUpLeads.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                        <div className="flex flex-col items-center space-y-3">
+                          <MessageCircle className="w-12 h-12 text-gray-300" />
+                          <p className="text-lg font-medium">Nenhum lead encontrado</p>
+                          <p className="text-sm">{searchTerm ? 'Nenhum lead corresponde à sua busca' : 'Nenhum lead de follow-up disponível'}</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    currentFollowUpLeads.map((lead) => {
                     const etapas = [lead.etapa_1, lead.etapa_2, lead.etapa_3, lead.etapa_4, lead.etapa_5, lead.etapa_6, lead.etapa_7];
                     const etapasCompletas = etapas.filter(e => e !== null).length;
 
@@ -409,10 +535,24 @@ const FollowUpPage: React.FC<FollowUpPageProps> = ({ toggleSidebar }) => {
                         </td>
                       </tr>
                     );
-                  })}
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination */}
+            {filteredFollowUpLeads.length > 0 && (
+              <div className="px-6 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                  <span>
+                    Mostrando {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredFollowUpLeads.length)} de {filteredFollowUpLeads.length} lead{filteredFollowUpLeads.length !== 1 ? 's' : ''}
+                    {followUpLeads.length !== filteredFollowUpLeads.length && ` (${followUpLeads.length} no total)`}
+                  </span>
+                </div>
+                {renderPagination()}
+              </div>
+            )}
           </div>
         )}
 
