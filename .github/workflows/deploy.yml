@@ -7,6 +7,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: 📥 Checkout
         uses: actions/checkout@v4
@@ -21,19 +22,44 @@ jobs:
           npm ci
           npm run build
 
+      - name: 🔎 Mostrar estrutura após o build (debug)
+        run: |
+          echo "== Raiz =="
+          ls -la
+          echo "== Procura por dist/build/out (nível 2) =="
+          find . -maxdepth 2 -type d \( -name dist -o -name build -o -name out \) -print || true
+
+      - name: 🧭 Detectar pasta de build (dist/build/out)
+        id: detect
+        run: |
+          if [ -d "./dist" ]; then
+            echo "local_dir=./dist/" >> $GITHUB_OUTPUT
+            echo "Usando ./dist/"
+          elif [ -d "./build" ]; then
+            echo "local_dir=./build/" >> $GITHUB_OUTPUT
+            echo "Usando ./build/"
+          elif [ -d "./out" ]; then
+            echo "local_dir=./out/" >> $GITHUB_OUTPUT
+            echo "Usando ./out/"
+          else
+            echo "❌ Não encontrei dist/, build/ ou out/."
+            echo "Confira seu package.json (script 'build') e vite.config.ts (build.outDir)."
+            exit 1
+          fi
+
       - name: 📤 Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER }}          # use o IP (sem ftp://)
+          server: ${{ secrets.FTP_SERVER }}          # EX.: 45.152.44.39 (sem ftp://)
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           protocol: ftps
           port: 21
           server-dir: ${{ secrets.FTP_PATH }}        # /home/u944677434/domains/revolead.com.br/public_html/app/
-          local-dir: ./dist/                         # <<< somente a build
+          local-dir: ${{ steps.detect.outputs.local_dir }}
           log-level: verbose
           exclude: |
-            **/.git*
+            **/.git**
             **/node_modules/**
             **/.github/**
             **/.bolt/**
