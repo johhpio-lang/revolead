@@ -2,26 +2,38 @@ name: 🚀 Deploy automático na Hostinger
 
 on:
   push:
-    branches:
-      - main  # ou a branch principal do seu projeto
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: 📥 Clonar repositório
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: 🧱 Instalar dependências e gerar build
+      - name: 🧱 Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 📦 Instalar deps e gerar build
         run: |
-          npm install
+          npm ci
           npm run build
 
-      - name: 📤 Enviar para Hostinger via FTP
+      - name: 📤 Deploy via FTPS
         uses: SamKirkland/FTP-Deploy-Action@v4.3.4
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          server: ${{ secrets.FTP_SERVER }}          # use o IP (sem ftp://)
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./dist/  # ajuste conforme sua pasta de build (pode ser ./out, ./build etc.)
-          server-dir: ${{ secrets.FTP_PATH }}
+          protocol: ftps
+          port: 21
+          server-dir: ${{ secrets.FTP_PATH }}        # /home/u944677434/domains/revolead.com.br/public_html/app/
+          local-dir: ./dist/                         # <<< somente a build
+          log-level: verbose
+          exclude: |
+            **/.git*
+            **/node_modules/**
+            **/.github/**
+            **/.bolt/**
